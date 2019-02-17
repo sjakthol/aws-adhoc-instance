@@ -95,16 +95,10 @@ Resources:
             Tags:
               - { Key: Name, Value: !Sub '${AWS::StackName}-volume' }
         UserData:
-          Fn::Base64: !Sub |
+          Fn::Base64: |
             #cloud-config
             repo_update: true
             repo_upgrade: all
-            fs_setup:
-              - device: /dev/nvme1n1
-                filesystem: ext4
-                label: home
-            mounts:
-              - [/dev/nvme1n1, /data, auto, "defaults,nofail,discard", "0", "0"]
 
   Instance:
     Type: "AWS::EC2::Instance"
@@ -114,10 +108,3 @@ Resources:
         Version: !GetAtt LaunchTemplate.LatestVersionNumber
       SubnetId: !ImportValue infra-vpc-sn-adhoc-a
 
-  VolumeAttachment:
-    Type: AWS::EC2::VolumeAttachment
-    Properties:
-      Device: /dev/xvdh
-      InstanceId: !Ref Instance
-      VolumeId:
-        Fn::ImportValue: !Sub adhoc-instance-${InstanceName}-volume
