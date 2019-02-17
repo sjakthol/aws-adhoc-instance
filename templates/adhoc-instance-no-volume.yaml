@@ -106,5 +106,5 @@ Resources:
       LaunchTemplate:
         LaunchTemplateId: !Ref LaunchTemplate
         Version: !GetAtt LaunchTemplate.LatestVersionNumber
-      SubnetId: !ImportValue infra-vpc-sn-adhoc-a
+      SubnetId: !ImportValue infra-vpc-sn-public-a
 
