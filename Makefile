@@ -5,31 +5,32 @@ AWS_PROFILE ?= default
 
 AWS_CMD := $(AWS) --profile $(AWS_PROFILE) --region $(AWS_REGION)
 
+AMI_NAME ?= Ubuntu1804
+ATTACH_VOLUME ?= false
 INSTANCE_NAME ?= default
-PARAMETERS := ParameterKey=InstanceName,ParameterValue=$(INSTANCE_NAME)
-TAGS ?= Key=Deployment,Value=adhoc-instance Key=DeploymentName,Value=adhoc-instance-$(INSTANCE_NAME)
+INSTANCE_TYPE ?= m5.large
+INSTANCE_MARKET ?= spot
+VOLUME_SIZE ?= 5
+PARAMETERS := \
+	AMIName=$(AMI_NAME) \
+	AttachVolume=$(ATTACH_VOLUME) \
+	InstanceName=$(INSTANCE_NAME) \
+	InstanceType=$(INSTANCE_TYPE) \
+	InstanceMarket=$(INSTANCE_MARKET) \
+	VolumeSize=$(VOLUME_SIZE)
+
+TAGS ?= Deployment=adhoc-instance DeploymentName=adhoc-instance-$(INSTANCE_NAME)
 
 define stack_template =
 
-validate-$(basename $(notdir $(1))): $(1)
-	 $(AWS_CMD) cloudformation validate-template\
-		--template-body file://$(1)
-
-create-$(basename $(notdir $(1))): $(1)
-	$(AWS_CMD) cloudformation create-stack \
+deploy-$(basename $(notdir $(1))): $(1)
+	$(AWS_CMD) cloudformation deploy \
 		--stack-name $(basename $(notdir $(1)))-$(INSTANCE_NAME) \
+		--capabilities CAPABILITY_NAMED_IAM \
+		--no-fail-on-empty-changeset \
+		--parameter-overrides $(PARAMETERS) \
 		--tags $(TAGS) \
-		--parameters $(PARAMETERS) \
-		--template-body file://$(1) \
-		--capabilities CAPABILITY_NAMED_IAM
-
-update-$(basename $(notdir $(1))): $(1)
-	$(AWS_CMD) cloudformation update-stack \
-		--stack-name $(basename $(notdir $(1)))-$(INSTANCE_NAME) \
-		--tags $(TAGS) \
-		--parameters $(PARAMETERS) \
-		--template-body file://$(1) \
-		--capabilities CAPABILITY_NAMED_IAM
+		--template-file $(1)
 
 delete-$(basename $(notdir $(1))): $(1)
 	$(AWS_CMD) cloudformation delete-stack \
